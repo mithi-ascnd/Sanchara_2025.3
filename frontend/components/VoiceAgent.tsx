@@ -165,13 +165,13 @@ export default function VoiceAgent({
 
   const processAudio = async (audioUri: string) => {
     try {
-      // Convert audio to base64 for OpenAI API
+      // Convert audio to base64 for Gemini API
       const response = await fetch(audioUri);
       const audioBlob = await response.blob();
       const base64Audio = await blobToBase64(audioBlob);
 
-      // Call OpenAI API for speech-to-text
-      const transcript = await callOpenAIAPI(base64Audio);
+      // Call Gemini Live API for speech-to-text
+      const transcript = await callGeminiAPI(base64Audio);
       
       setVoiceState(prev => ({
         ...prev,
@@ -207,125 +207,59 @@ export default function VoiceAgent({
     });
   };
 
-  const getOpenAIKey = (): string => {
-    const keys = [
-      'sk-abcdef1234567890abcdef1234567890abcdef12',
-      'sk-1234567890abcdef1234567890abcdef12345678',
-      'sk-abcdefabcdefabcdefabcdefabcdefabcdef12',
-      'sk-7890abcdef7890abcdef7890abcdef7890abcd',
-      'sk-1234abcd1234abcd1234abcd1234abcd1234abcd',
-      'sk-abcd1234abcd1234abcd1234abcd1234abcd1234',
-      'sk-5678efgh5678efgh5678efgh5678efgh5678efgh',
-      'sk-efgh5678efgh5678efgh5678efgh5678efgh5678',
-      'sk-ijkl1234ijkl1234ijkl1234ijkl1234ijkl1234',
-      'sk-mnop5678mnop5678mnop5678mnop5678mnop5678',
-      'sk-qrst1234qrst1234qrst1234qrst1234qrst1234',
-      'sk-uvwx5678uvwx5678uvwx5678uvwx5678uvwx5678',
-      'sk-1234ijkl1234ijkl1234ijkl1234ijkl1234ijkl',
-      'sk-5678mnop5678mnop5678mnop5678mnop5678mnop',
-      'sk-qrst5678qrst5678qrst5678qrst5678qrst5678',
-      'sk-uvwx1234uvwx1234uvwx1234uvwx1234uvwx1234',
-      'sk-1234abcd5678efgh1234abcd5678efgh1234abcd',
-      'sk-5678ijkl1234mnop5678ijkl1234mnop5678ijkl',
-      'sk-abcdqrstefghuvwxabcdqrstefghuvwxabcdqrst',
-      'sk-ijklmnop1234qrstijklmnop1234qrstijklmnop',
-      'sk-1234uvwx5678abcd1234uvwx5678abcd1234uvwx',
-      'sk-efghijkl5678mnopabcd1234efghijkl5678mnop',
-      'sk-mnopqrstuvwxabcdmnopqrstuvwxabcdmnopqrst',
-      'sk-ijklmnopqrstuvwxijklmnopqrstuvwxijklmnop',
-      'sk-abcd1234efgh5678abcd1234efgh5678abcd1234',
-      'sk-1234ijklmnop5678ijklmnop1234ijklmnop5678',
-      'sk-qrstefghuvwxabcdqrstefghuvwxabcdqrstefgh',
-      'sk-uvwxijklmnop1234uvwxijklmnop1234uvwxijkl',
-      'sk-abcd5678efgh1234abcd5678efgh1234abcd5678',
-      'sk-ijklmnopqrstuvwxijklmnopqrstuvwxijklmnop',
-      'sk-1234qrstuvwxabcd1234qrstuvwxabcd1234qrst',
-      'sk-efghijklmnop5678efghijklmnop5678efghijkl',
-      'sk-mnopabcd1234efghmnopabcd1234efghmnopabcd',
-      'sk-ijklqrst5678uvwxijklqrst5678uvwxijklqrst',
-      'sk-1234ijkl5678mnop1234ijkl5678mnop1234ijkl',
-      'sk-abcdqrstefgh5678abcdqrstefgh5678abcdqrst',
-      'sk-ijklmnopuvwx1234ijklmnopuvwx1234ijklmnop',
-      'sk-efgh5678abcd1234efgh5678abcd1234efgh5678',
-      'sk-mnopqrstijkl5678mnopqrstijkl5678mnopqrst',
-      'sk-1234uvwxabcd5678uvwxabcd1234uvwxabcd5678',
-      'sk-ijklmnop5678efghijklmnop5678efghijklmnop',
-      'sk-abcd1234qrstuvwxabcd1234qrstuvwxabcd1234',
-      'sk-1234efgh5678ijkl1234efgh5678ijkl1234efgh',
-      'sk-5678mnopqrstuvwx5678mnopqrstuvwx5678mnop',
-      'sk-abcdijkl1234uvwxabcdijkl1234uvwxabcdijkl',
-      'sk-ijklmnopabcd5678ijklmnopabcd5678ijklmnop',
-      'sk-1234efghqrstuvwx1234efghqrstuvwx1234efgh',
-      'sk-5678ijklmnopabcd5678ijklmnopabcd5678ijkl',
-      'sk-abcd1234efgh5678abcd1234efgh5678abcd1234',
-      'sk-ijklmnopqrstuvwxijklmnopqrstuvwxijklmnop'
-    ];
-    
-    // Return a random key for load balancing
-    return keys[Math.floor(Math.random() * keys.length)];
-  };
-
-  const callOpenAIAPI = async (base64Audio: string): Promise<string> => {
+  const callGeminiAPI = async (base64Audio: string): Promise<string> => {
     try {
-      const API_KEY = getOpenAIKey();
-
-      // Convert base64 to blob for OpenAI Whisper API
-      const audioBlob = new Blob([Buffer.from(base64Audio, 'base64')], { type: 'audio/mp4' });
-      
-      const formData = new FormData();
-      formData.append('file', audioBlob, 'audio.mp4');
-      formData.append('model', 'whisper-1');
-      formData.append('language', 'en');
+      const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+      if (!API_KEY) {
+        throw new Error('Gemini API key not found');
+      }
 
       const response = await fetch(
-        'https://api.openai.com/v1/audio/transcriptions',
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${API_KEY}`,
+            'Content-Type': 'application/json',
           },
-          body: formData,
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: "Transcribe the following audio to text. Return only the transcribed text without any additional formatting or explanation."
+              }, {
+                inline_data: {
+                  mime_type: "audio/mp4",
+                  data: base64Audio
+                }
+              }]
+            }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 1000,
+            }
+          })
         }
       );
 
       if (!response.ok) {
-        // Fallback to text-based simulation if Whisper fails
-        console.warn('Whisper API failed, using fallback');
-        return await simulateTranscription();
+        throw new Error(`Gemini API error: ${response.status}`);
       }
 
       const data = await response.json();
-      return data.text || 'No transcript available';
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No transcript available';
     } catch (error) {
-      console.error('OpenAI Whisper API error:', error);
-      // Fallback to simulation
-      return await simulateTranscription();
+      console.error('Gemini API error:', error);
+      throw error;
     }
-  };
-
-  const simulateTranscription = async (): Promise<string> => {
-    // Simulate realistic voice input for demo purposes
-    const simulatedInputs = [
-      "username is john password is mypass123",
-      "help me find accessible restaurants nearby",
-      "search for wheelchair accessible places",
-      "report a barrier at this location",
-      "navigate to the nearest accessible parking",
-      "what accessibility features are available here",
-      "find me a smooth path to the entrance",
-      "are there elevators in this building",
-      "show me accessible routes to downtown",
-      "voice login username testuser password testpass"
-    ];
-    
-    return simulatedInputs[Math.floor(Math.random() * simulatedInputs.length)];
   };
 
   const generateAIResponse = async (userInput: string) => {
     try {
       setVoiceState(prev => ({ ...prev, isSpeaking: true }));
 
-      const API_KEY = getOpenAIKey();
+      const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+      if (!API_KEY) {
+        throw new Error('Gemini API key not found');
+      }
 
       // Enhanced prompt for better conversations
       const systemPrompt = `You are Sanchara, a friendly and helpful AI assistant for accessibility navigation. You help people with mobility, vision, and hearing needs navigate their surroundings safely and confidently.
@@ -335,31 +269,32 @@ User said: "${userInput}"
 Respond in a conversational, helpful manner. Keep responses concise (1-2 sentences) but warm and encouraging. Focus on accessibility, navigation, and helping the user. If they ask about features, explain how Sanchara can help them navigate, find accessible places, or report barriers.`;
 
       const response = await fetch(
-        'https://api.openai.com/v1/chat/completions',
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`,
           },
           body: JSON.stringify({
-            model: 'gpt-3.5-turbo',
-            messages: [{
-              role: 'system',
-              content: systemPrompt
+            contents: [{
+              parts: [{
+                text: systemPrompt
+              }]
             }],
-            max_tokens: 150,
-            temperature: 0.8,
+            generationConfig: {
+              temperature: 0.8,
+              maxOutputTokens: 150,
+            }
           })
         }
       );
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
+        throw new Error(`Gemini API error: ${response.status}`);
       }
 
       const data = await response.json();
-      const aiResponse = data.choices?.[0]?.message?.content || 'I understand. How can I help you navigate today?';
+      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'I understand. How can I help you navigate today?';
       
       setVoiceState(prev => ({ 
         ...prev, 
