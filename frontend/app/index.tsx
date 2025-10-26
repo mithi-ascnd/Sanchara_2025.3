@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, 
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import { Ionicons } from '@expo/vector-icons';
-import VoiceAgent from '../services/VoiceAgent';
+import VoiceAgent from '../components/VoiceAgent';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');

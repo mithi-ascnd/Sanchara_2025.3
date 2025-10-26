@@ -5,7 +5,7 @@ import { useAuthStore } from '../../store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import AccessibilityInput from '../../components/AccessibilityInput';
 import AccessibilityButton from '../../components/AccessibilityButton';
-import VoiceAgent from '../../services/VoiceAgent';
+import VoiceAgent from '../../components/VoiceAgent';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Login() {

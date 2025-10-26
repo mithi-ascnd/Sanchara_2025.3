@@ -9,7 +9,7 @@ import CurrentLocationScore from '../../components/CurrentLocationScore';
 import EnhancedHeader from '../../components/EnhancedHeader';
 import EnhancedFloatingButton from '../../components/EnhancedFloatingButton';
 import EnhancedLocationCard from '../../components/EnhancedLocationCard';
-import VoiceAgent from '../../services/VoiceAgent';
+import VoiceAgent from '../../components/VoiceAgent';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Conditional import for maps (only on native)
