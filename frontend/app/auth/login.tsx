@@ -7,6 +7,7 @@ import AccessibilityInput from '../../components/AccessibilityInput';
 import AccessibilityButton from '../../components/AccessibilityButton';
 import VoiceAgent from '../../components/VoiceAgent';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Speech from 'expo-speech';
 
 export default function Login() {
   const router = useRouter();
@@ -15,6 +16,21 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [voiceMode, setVoiceMode] = useState(false);
+  const [welcomeSpoken, setWelcomeSpoken] = useState(false);
+
+  useEffect(() => {
+    // Welcome message with text-to-speech
+    if (!welcomeSpoken) {
+      const welcomeMessage = "Welcome back to Sanchara! You can login using voice commands or manually. Tap the voice button to speak your credentials.";
+      Speech.speak(welcomeMessage, {
+        language: 'en',
+        pitch: 1.0,
+        rate: 0.8,
+        quality: Speech.VoiceQuality.Enhanced,
+      });
+      setWelcomeSpoken(true);
+    }
+  }, [welcomeSpoken]);
 
   const handleVoiceAuth = (voiceUsername: string, voicePassword: string) => {
     setUsername(voiceUsername);

@@ -5,7 +5,7 @@ import { useAuthStore } from '../../store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import SancharaScore from '../../components/SancharaScore';
-import CurrentLocationScore from '../../components/CurrentLocationScore';
+import CompactLocationScore from '../../components/CompactLocationScore';
 import EnhancedHeader from '../../components/EnhancedHeader';
 import EnhancedFloatingButton from '../../components/EnhancedFloatingButton';
 import EnhancedLocationCard from '../../components/EnhancedLocationCard';
@@ -238,11 +238,11 @@ export default function WheelchairNavigation() {
         </View>
       )}
 
-      {/* Current Location Score */}
-      <View style={styles.currentLocationContainer}>
-        <CurrentLocationScore 
+      {/* Compact Current Location Score */}
+      <View style={styles.compactLocationContainer}>
+        <CompactLocationScore 
           onScoreUpdate={setCurrentLocationScore}
-          style={styles.currentLocationScore}
+          style={styles.compactLocationScore}
         />
       </View>
 
@@ -564,14 +564,14 @@ const styles = StyleSheet.create({
     color: '#aaa',
     textAlign: 'center',
   },
-  currentLocationContainer: {
+  compactLocationContainer: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 140 : 120,
     left: 16,
     right: 16,
   },
-  currentLocationScore: {
-    marginBottom: 16,
+  compactLocationScore: {
+    marginBottom: 8,
   },
   voiceAgentContainer: {
     marginBottom: 16,

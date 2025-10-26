@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, StatusBar, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, StatusBar, Dimensions, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import VoiceAgent from '../components/VoiceAgent';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Speech from 'expo-speech';
 
 const { width, height } = Dimensions.get('window');
 
@@ -13,10 +14,25 @@ export default function Index() {
   const { isAuthenticated, isLoading, loadUser, user } = useAuthStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [voiceAgentEnabled, setVoiceAgentEnabled] = useState(true);
+  const [welcomeSpoken, setWelcomeSpoken] = useState(false);
 
   useEffect(() => {
     loadUser();
   }, []);
+
+  // Welcome message with text-to-speech
+  useEffect(() => {
+    if (!welcomeSpoken && !isLoading) {
+      const welcomeMessage = "Welcome to Sanchara! Your accessibility navigation companion. I'm here to help you explore the world with confidence. You can speak to me anytime or use the touch controls.";
+      Speech.speak(welcomeMessage, {
+        language: 'en',
+        pitch: 1.0,
+        rate: 0.8,
+        quality: Speech.VoiceQuality.Enhanced,
+      });
+      setWelcomeSpoken(true);
+    }
+  }, [isLoading, welcomeSpoken]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -44,22 +60,25 @@ export default function Index() {
 
   const onboardingSteps = [
     {
-      title: "Navigate your surroundings with effortless confidence",
-      subtitle: "Explore new destinations, effortlessly find your path, and never lose your way!",
+      title: "Navigate with confidence",
+      subtitle: "Discover accessible routes and never lose your way. Sanchara guides you through every step of your journey.",
       illustration: "navigate-circle",
-      color: "#00D4AA"
+      color: "#00D4AA",
+      features: ["Real-time navigation", "Accessibility alerts", "Voice guidance"]
     },
     {
-      title: "Accessibility scores for every location",
-      subtitle: "Get real-time accessibility ratings to make informed decisions about where to go.",
+      title: "Accessibility scores everywhere",
+      subtitle: "Get instant accessibility ratings for any location. Know before you go with our comprehensive scoring system.",
       illustration: "star",
-      color: "#FF6B6B"
+      color: "#4ECDC4",
+      features: ["Location scoring", "Feature detection", "User reports"]
     },
     {
-      title: "You're All Set!",
-      subtitle: "We've personalized your experience based on your needs.",
-      illustration: "checkmark-circle",
-      color: "#4ECDC4"
+      title: "Your personal AI assistant",
+      subtitle: "Meet Sanchara, your voice-enabled accessibility companion. Ask questions, get directions, and explore with confidence.",
+      illustration: "chatbubble-ellipses",
+      color: "#FF6B6B",
+      features: ["Voice commands", "Conversational AI", "Smart assistance"]
     }
   ];
 
@@ -143,6 +162,16 @@ export default function Index() {
           <View style={styles.textContainer}>
             <Text style={styles.title}>{currentStepData.title}</Text>
             <Text style={styles.subtitle}>{currentStepData.subtitle}</Text>
+            
+            {/* Features List */}
+            <View style={styles.featuresContainer}>
+              {currentStepData.features.map((feature, index) => (
+                <View key={index} style={styles.featureItem}>
+                  <Ionicons name="checkmark-circle" size={16} color={currentStepData.color} />
+                  <Text style={styles.featureText}>{feature}</Text>
+                </View>
+              ))}
+            </View>
           </View>
 
           {/* Progress Indicators */}
@@ -326,6 +355,22 @@ const styles = StyleSheet.create({
     color: '#ccc',
     textAlign: 'center',
     lineHeight: 24,
+    marginBottom: 24,
+  },
+  featuresContainer: {
+    marginTop: 16,
+    gap: 8,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  featureText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
   progressContainer: {
     flexDirection: 'row',
