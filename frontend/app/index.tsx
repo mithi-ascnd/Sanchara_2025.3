@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, 
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import { Ionicons } from '@expo/vector-icons';
+import VoiceAgent from '../services/VoiceAgent';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
@@ -11,6 +12,7 @@ export default function Index() {
   const router = useRouter();
   const { isAuthenticated, isLoading, loadUser, user } = useAuthStore();
   const [currentStep, setCurrentStep] = useState(0);
+  const [voiceAgentEnabled, setVoiceAgentEnabled] = useState(true);
 
   useEffect(() => {
     loadUser();
@@ -73,6 +75,16 @@ export default function Index() {
 
   const handleSkip = () => {
     router.push('/auth/login');
+  };
+
+  const handleVoiceInput = (text: string) => {
+    const lowerText = text.toLowerCase();
+    
+    if (lowerText.includes('get started') || lowerText.includes('continue') || lowerText.includes('next')) {
+      handleNext();
+    } else if (lowerText.includes('skip') || lowerText.includes('login')) {
+      handleSkip();
+    }
   };
 
   return (
@@ -162,6 +174,17 @@ export default function Index() {
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Voice Agent */}
+        {voiceAgentEnabled && (
+          <View style={styles.voiceAgentContainer}>
+            <VoiceAgent
+              onTextReceived={handleVoiceInput}
+              isEnabled={voiceAgentEnabled}
+              mode="conversation"
+            />
+          </View>
+        )}
       </LinearGradient>
     </View>
   );
@@ -352,5 +375,11 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  voiceAgentContainer: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 100 : 80,
+    right: 20,
+    alignItems: 'center',
   },
 });

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import AccessibilityInput from '../../components/AccessibilityInput';
 import AccessibilityButton from '../../components/AccessibilityButton';
+import VoiceAgent from '../../services/VoiceAgent';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Login() {
@@ -13,6 +14,21 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
+
+  const handleVoiceAuth = (voiceUsername: string, voicePassword: string) => {
+    setUsername(voiceUsername);
+    setPassword(voicePassword);
+    setVoiceMode(false);
+    // Auto-login after voice input
+    setTimeout(() => {
+      handleLogin();
+    }, 500);
+  };
+
+  const toggleVoiceMode = () => {
+    setVoiceMode(!voiceMode);
+  };
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -60,50 +76,91 @@ export default function Login() {
             </View>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Login to continue your journey</Text>
-          </View>
-
-          <View style={styles.form}>
-            <AccessibilityInput
-              label="Username"
-              value={username}
-              onChangeText={setUsername}
-              placeholder="Enter your username"
-              autoCapitalize="none"
-              accessibilityLabel="Username input"
-              accessibilityHint="Enter your username to login"
-            />
-
-            <AccessibilityInput
-              label="Password"
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter your password"
-              secureTextEntry
-              accessibilityLabel="Password input"
-              accessibilityHint="Enter your password to login"
-            />
-
-            <AccessibilityButton
-              onPress={handleLogin}
-              title={loading ? 'Logging in...' : 'Login'}
-              icon="log-in"
-              disabled={loading}
-              size="large"
-              accessibilityLabel="Login button"
-              accessibilityHint="Double tap to login to your account"
-              style={styles.loginButton}
-            />
-
+            
+            {/* Voice Login Option */}
             <TouchableOpacity 
-              style={styles.linkButton}
-              onPress={() => router.push('/auth/register')}
+              style={styles.voiceLoginButton}
+              onPress={toggleVoiceMode}
               accessible={true}
-              accessibilityLabel="Create new account"
-              accessibilityHint="Double tap to create a new account"
+              accessibilityLabel="Login with voice"
+              accessibilityHint="Double tap to enable voice login mode"
             >
-              <Text style={styles.linkText}>Don't have an account? Register</Text>
+              <Ionicons name="mic" size={20} color="#00D4AA" />
+              <Text style={styles.voiceLoginText}>
+                {voiceMode ? 'Voice Login Active' : 'Login with Voice'}
+              </Text>
             </TouchableOpacity>
           </View>
+
+          {voiceMode ? (
+            <View style={styles.voiceModeContainer}>
+              <Text style={styles.voiceModeTitle}>Voice Login</Text>
+              <Text style={styles.voiceModeSubtitle}>
+                Say your username and password. For example: "username is john" and "password is mypass123"
+              </Text>
+              
+              <View style={styles.voiceAgentContainer}>
+                <VoiceAgent
+                  mode="auth"
+                  onAuthData={handleVoiceAuth}
+                  isEnabled={true}
+                />
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.backToManualButton}
+                onPress={toggleVoiceMode}
+                accessible={true}
+                accessibilityLabel="Back to manual login"
+                accessibilityHint="Double tap to return to manual login form"
+              >
+                <Text style={styles.backToManualText}>Back to Manual Login</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.form}>
+              <AccessibilityInput
+                label="Username"
+                value={username}
+                onChangeText={setUsername}
+                placeholder="Enter your username"
+                autoCapitalize="none"
+                accessibilityLabel="Username input"
+                accessibilityHint="Enter your username to login"
+              />
+
+              <AccessibilityInput
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter your password"
+                secureTextEntry
+                accessibilityLabel="Password input"
+                accessibilityHint="Enter your password to login"
+              />
+
+              <AccessibilityButton
+                onPress={handleLogin}
+                title={loading ? 'Logging in...' : 'Login'}
+                icon="log-in"
+                disabled={loading}
+                size="large"
+                accessibilityLabel="Login button"
+                accessibilityHint="Double tap to login to your account"
+                style={styles.loginButton}
+              />
+
+              <TouchableOpacity 
+                style={styles.linkButton}
+                onPress={() => router.push('/auth/register')}
+                accessible={true}
+                accessibilityLabel="Create new account"
+                accessibilityHint="Double tap to create a new account"
+              >
+                <Text style={styles.linkText}>Don't have an account? Register</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </LinearGradient>
     </KeyboardAvoidingView>
@@ -176,6 +233,59 @@ const styles = StyleSheet.create({
   },
   linkText: {
     color: '#4CAF50',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  voiceLoginButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(0, 212, 170, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 212, 170, 0.3)',
+    marginTop: 16,
+  },
+  voiceLoginText: {
+    color: '#00D4AA',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  voiceModeContainer: {
+    alignItems: 'center',
+    gap: 24,
+  },
+  voiceModeTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+  },
+  voiceModeSubtitle: {
+    fontSize: 16,
+    color: '#ccc',
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 20,
+  },
+  voiceAgentContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  backToManualButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  backToManualText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '500',
   },

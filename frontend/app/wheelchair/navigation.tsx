@@ -5,6 +5,11 @@ import { useAuthStore } from '../../store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import SancharaScore from '../../components/SancharaScore';
+import CurrentLocationScore from '../../components/CurrentLocationScore';
+import EnhancedHeader from '../../components/EnhancedHeader';
+import EnhancedFloatingButton from '../../components/EnhancedFloatingButton';
+import EnhancedLocationCard from '../../components/EnhancedLocationCard';
+import VoiceAgent from '../../services/VoiceAgent';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Conditional import for maps (only on native)
@@ -28,6 +33,8 @@ export default function WheelchairNavigation() {
   const [nearbyLocations, setNearbyLocations] = useState([]);
   const [heatmapData, setHeatmapData] = useState([]);
   const [showMenu, setShowMenu] = useState(false);
+  const [currentLocationScore, setCurrentLocationScore] = useState<number | null>(null);
+  const [voiceAgentEnabled, setVoiceAgentEnabled] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -89,6 +96,25 @@ export default function WheelchairNavigation() {
     } catch (error) {
       console.error('Error fetching heatmap:', error);
     }
+  };
+
+  const handleVoiceInput = (text: string) => {
+    // Handle voice commands for navigation
+    const lowerText = text.toLowerCase();
+    
+    if (lowerText.includes('search') || lowerText.includes('find')) {
+      router.push('/search');
+    } else if (lowerText.includes('report') || lowerText.includes('barrier')) {
+      router.push('/report');
+    } else if (lowerText.includes('profile') || lowerText.includes('settings')) {
+      router.push('/profile');
+    } else if (lowerText.includes('menu')) {
+      setShowMenu(!showMenu);
+    }
+  };
+
+  const toggleVoiceAgent = () => {
+    setVoiceAgentEnabled(!voiceAgentEnabled);
   };
 
   const handleLogout = async () => {
@@ -153,26 +179,16 @@ export default function WheelchairNavigation() {
           )
         )}
 
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerIcon}>
-            <Ionicons name="accessibility" size={28} color="#fff" />
-            <View style={styles.iconGlow} />
-          </View>
-          <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>Wheelchair Mode</Text>
-            <Text style={styles.headerSubtitle}>Accessible Routes</Text>
-          </View>
-        </View>
-        <TouchableOpacity 
-          onPress={() => setShowMenu(!showMenu)}
-          accessible={true}
-          accessibilityLabel="Open menu"
-          accessibilityHint="Double tap to open navigation menu"
-        >
-          <Ionicons name="menu" size={32} color="#fff" />
-        </TouchableOpacity>
-      </View>
+      <EnhancedHeader
+        title="Wheelchair Mode"
+        subtitle="Accessible Routes"
+        icon="accessibility"
+        iconColor="#00D4AA"
+        onMenuPress={() => setShowMenu(!showMenu)}
+        onVoiceToggle={toggleVoiceAgent}
+        voiceEnabled={voiceAgentEnabled}
+        showVoiceToggle={true}
+      />
 
       {showMenu && (
         <View style={styles.menu}>
@@ -222,6 +238,14 @@ export default function WheelchairNavigation() {
         </View>
       )}
 
+      {/* Current Location Score */}
+      <View style={styles.currentLocationContainer}>
+        <CurrentLocationScore 
+          onScoreUpdate={setCurrentLocationScore}
+          style={styles.currentLocationScore}
+        />
+      </View>
+
       <View style={styles.bottomPanel}>
         <View style={styles.panelHeader}>
           <Text style={styles.panelTitle}>Nearby Places</Text>
@@ -229,80 +253,63 @@ export default function WheelchairNavigation() {
         </View>
         
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.locationsScroll}>
-          {nearbyLocations.slice(0, 5).map((loc: any) => (
-            <View key={loc.id} style={styles.locationCard}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.locationName}>{loc.name}</Text>
-                <SancharaScore 
-                  score={loc.sanchara_score} 
-                  size="medium"
-                  accessibilityLabel={`${loc.name} accessibility score: ${loc.sanchara_score} out of 10`}
-                />
-              </View>
-              
-              <View style={styles.locationDetails}>
-                <Text style={styles.locationAddress}>{loc.address}</Text>
-                <Text style={styles.locationDistance}>{loc.distance?.toFixed(1)} km away</Text>
-              </View>
-              
-              <View style={styles.features}>
-                {loc.has_ramp && (
-                  <View style={styles.feature}>
-                    <Ionicons name="checkmark-circle" size={16} color="#00D4AA" />
-                    <Text style={styles.featureText}>Ramp Access</Text>
-                  </View>
-                )}
-                {loc.has_elevator && (
-                  <View style={styles.feature}>
-                    <Ionicons name="checkmark-circle" size={16} color="#00D4AA" />
-                    <Text style={styles.featureText}>Elevator</Text>
-                  </View>
-                )}
-                {loc.surface_type === 'smooth' && (
-                  <View style={styles.feature}>
-                    <Ionicons name="checkmark-circle" size={16} color="#00D4AA" />
-                    <Text style={styles.featureText}>Smooth Surface</Text>
-                  </View>
-                )}
-                {loc.has_accessible_parking && (
-                  <View style={styles.feature}>
-                    <Ionicons name="checkmark-circle" size={16} color="#00D4AA" />
-                    <Text style={styles.featureText}>Accessible Parking</Text>
-                  </View>
-                )}
-              </View>
-              
-              <TouchableOpacity style={styles.viewDetailsButton}>
-                <Text style={styles.viewDetailsText}>View Details</Text>
-                <Ionicons name="arrow-forward" size={16} color="#00D4AA" />
-              </TouchableOpacity>
-            </View>
-          ))}
+          {nearbyLocations.slice(0, 5).map((loc: any) => {
+            const features = [];
+            if (loc.has_ramp) features.push('Ramp Access');
+            if (loc.has_elevator) features.push('Elevator');
+            if (loc.surface_type === 'smooth') features.push('Smooth Surface');
+            if (loc.has_accessible_parking) features.push('Accessible Parking');
+            
+            return (
+              <EnhancedLocationCard
+                key={loc.id}
+                name={loc.name}
+                address={loc.address}
+                distance={loc.distance}
+                sancharaScore={loc.sanchara_score}
+                features={features}
+                onPress={() => {
+                  // Handle card press - could navigate to details
+                  console.log('Navigate to location details:', loc.name);
+                }}
+                accessibilityLabel={`${loc.name}, accessibility score ${loc.sanchara_score}`}
+              />
+            );
+          })}
         </ScrollView>
       </View>
 
       <View style={styles.floatingButtons}>
-        <TouchableOpacity 
-          style={styles.floatingButton}
+        {/* Voice Agent */}
+        {voiceAgentEnabled && (
+          <View style={styles.voiceAgentContainer}>
+            <VoiceAgent
+              onTextReceived={handleVoiceInput}
+              isEnabled={voiceAgentEnabled}
+              mode="conversation"
+            />
+          </View>
+        )}
+
+        <EnhancedFloatingButton
+          icon="search"
+          label="Search"
           onPress={() => router.push('/search')}
-          accessible={true}
+          color="#00D4AA"
+          size="medium"
           accessibilityLabel="Search for accessible locations"
           accessibilityHint="Double tap to search for wheelchair-accessible places"
-        >
-          <Ionicons name="search" size={32} color="#fff" />
-          <Text style={styles.floatingButtonText}>Search</Text>
-        </TouchableOpacity>
+        />
 
-        <TouchableOpacity 
-          style={[styles.floatingButton, styles.reportButton]}
+        <EnhancedFloatingButton
+          icon="warning"
+          label="Report"
           onPress={() => router.push('/report')}
-          accessible={true}
+          color="#FF6B6B"
+          size="medium"
           accessibilityLabel="Report accessibility barrier"
           accessibilityHint="Double tap to report barriers or obstacles"
-        >
-          <Ionicons name="warning" size={32} color="#fff" />
-          <Text style={styles.floatingButtonText}>Report</Text>
-        </TouchableOpacity>
+        />
       </View>
       </LinearGradient>
     </View>
@@ -369,6 +376,16 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  voiceToggleButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   headerTitle: {
     color: '#fff',
@@ -546,5 +563,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#aaa',
     textAlign: 'center',
+  },
+  currentLocationContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 140 : 120,
+    left: 16,
+    right: 16,
+  },
+  currentLocationScore: {
+    marginBottom: 16,
+  },
+  voiceAgentContainer: {
+    marginBottom: 16,
+    alignItems: 'center',
   },
 });
